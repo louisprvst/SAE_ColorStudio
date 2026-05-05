@@ -160,7 +160,7 @@ class Light:
 		outString ="<"+lightMark+" name=\""+self._name+"\""+">"+"\n"+ \
 			"<"+inputFileMark+ \
 			" ext=\"" + \
-			self.ImagesArray._extImageName+ \
+			self._ImagesArray._extImageName+ \
 			"\" min=\"0\" max=\""+str(self._ImagesArray._nbImage)+"\" "+ \
 			" digit=\""+ str(self._ImagesArray._nbDigit) + "\" >" + \
 			self._ImagesArray._pathImage+self._ImagesArray._baseImageName+ \
@@ -414,10 +414,10 @@ class AE_Ymean(PostProcess):
 # ----------------------------------------------------------------------------------
 class PPClip(PostProcess):
 
-	def __int__(self,minValue=0.0,maxValue=1.0):
+	def __init__(self,minValue=0.0,maxValue=1.0):
 		self._minValue = minValue
 		self._maxValue = maxValue
 	
 	def postProcess(self,img):
-		return np.clip(imgOut,self._minValue,self._maxValue)
+		return np.clip(img,self._minValue,self._maxValue)
 

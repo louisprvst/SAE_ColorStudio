@@ -8,7 +8,7 @@ Color Studio - Rémi Cozot 2019
 # ----------------------------------------------------------------------------------
 # main changes
 # ----------------------------------------------------------------------------------
-# GUI lib: pygame to pyqt5
+# GUI lib: pygame to pyqt5 -> pyqt6 (June 2024 migration to Python 3.12)
 # include 3d color point cloud (modernGL) 
 # ----------------------------------------------------------------------------------
 # version0.0
@@ -19,9 +19,7 @@ Color Studio - Rémi Cozot 2019
 # ----------------------------------------------------------------------------------
 import sys
 
-import easygui
-
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QFileDialog
 
 import colorStudioModel
 import colorStudioWidget
@@ -42,10 +40,10 @@ if not app:  app = QApplication(sys.argv)
 
 # select input file name
 defaultFilename = "./xml-2019-6-7-22-47-1.xml" 
-inputFilename =  easygui.fileopenbox(msg="select light-settup file",title="Color Studio",default='xml*.xml',filetypes=["*.xml","xml files"],multiple=False)
+inputFilename, _ = QFileDialog.getOpenFileName(None, "select light-setup file", "", "XML Files (*.xml);;All Files (*)")
 print("ColorStudio: inuput file>",inputFilename)
 
-if inputFilename == None: 
+if not inputFilename:
     inputFilename= defaultFilename
     print("ColorStudio: inuput file>",inputFilename)
 
@@ -61,5 +59,5 @@ lightsScene.print()
 ui = colorStudioUIBuilder.CSUIAllBuilder(lightsScene)
 
 # run app for event management
-app.exec_()
+app.exec()
 

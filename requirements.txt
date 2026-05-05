@@ -1,0 +1,13 @@
+# Color Studio Requirements - Python 3.12 + PyQt6
+# Updated: June 2024
+
+# GUI Framework
+PyQt6>=6.7.0
+
+# Image Processing
+numpy>=1.26.0
+scikit-image>=0.22.0
+imageio>=2.33.0
+
+# 3D Graphics
+moderngl>=5.10.0

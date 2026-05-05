@@ -8,7 +8,7 @@ Color Studio - Rémi Cozot 2019
 # ----------------------------------------------------------------------------------
 # main changes
 # ----------------------------------------------------------------------------------
-# GUI lib: pygame to pyqt5
+# GUI lib: pygame to pyqt5 -> pyqt6 (June 2024 migration to Python 3.12)
 # include 3d color point cloud (modernGL) 
 # ----------------------------------------------------------------------------------
 # version0.0
@@ -26,9 +26,11 @@ import math
 import numpy as np
 import skimage
 
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QSlider
-from PyQt5.QtGui import QIcon, QPixmap, QImage
-from PyQt5 import QtCore, QtOpenGL 
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QSlider
+from PyQt6.QtGui import QIcon, QPixmap, QImage
+from PyQt6.QtOpenGLWidgets import QOpenGLWidget
+from PyQt6.QtCore import Qt
+from PyQt6 import QtCore
 
 import colorStudioModel
 import colorStudioUtils
@@ -51,24 +53,32 @@ def getScreenSize():
 # ----------------------------------------------------------------------------------
 # classes
 # ----------------------------------------------------------------------------------
-class QModernGLWidget(QtOpenGL.QGLWidget):
+class QModernGLWidget(QOpenGLWidget):
     def __init__(self):
-        fmt = QtOpenGL.QGLFormat()
-        fmt.setVersion(3, 3)
-        fmt.setProfile(QtOpenGL.QGLFormat.CoreProfile)
-        fmt.setSampleBuffers(True)
         self.timer = QtCore.QElapsedTimer()
-        super(QModernGLWidget, self).__init__(fmt, None)
+        self._glReady = False
+        self._glFailed = False
+        super(QModernGLWidget, self).__init__()
 
     def initializeGL(self):
         pass
 
     def paintGL(self):
-        self.ctx = moderngl.create_context()
-        self.screen = self.ctx.detect_framebuffer()
-        self.init()
+        if self._glFailed:
+            return
+
+        if not self._glReady:
+            try:
+                self.ctx = moderngl.create_context()
+                self.screen = self.ctx.detect_framebuffer()
+                self.init()
+                self._glReady = True
+            except OSError as exc:
+                self._glFailed = True
+                print("ColorStudio: OpenGL indisponible, rendu 3D désactivé:", exc)
+                return
+
         self.render()
-        self.paintGL = self.render
 
     def init(self):
         pass
@@ -165,87 +175,99 @@ class MyWidgetGL(QModernGLWidget):
 
 
     def init(self):
+        if getattr(self, "_glFailed", False):
+            return
         #self.resize(480, 480)
         #self.setGeometry(1440,30,480,480)
         self.ctx.viewport = (0, 0, 480, 480)
         self.scene = HelloWorld2D(self.ctx)
 
     def render(self):
+        if getattr(self, "_glFailed", False):
+            return
         self.screen.use()
         self.scene.clear()
         self.scene.plot(self.VBOdata)
 
     def mousePressEvent(self, evt):
+        if getattr(self, "_glFailed", False):
+            return
         pan_tool.start_drag(evt.x() / 512, evt.y() / 512)
         self.scene.pan(pan_tool.value)
         self.update()
 
     def mouseMoveEvent(self, evt):
+        if getattr(self, "_glFailed", False):
+            return
         pan_tool.dragging(evt.x() / 512, evt.y() / 512)
         self.scene.pan(pan_tool.value)
         self.update()
 
     def mouseReleaseEvent(self, evt):
+        if getattr(self, "_glFailed", False):
+            return
         pan_tool.stop_drag(evt.x() / 512, evt.y() / 512)
         self.scene.pan(pan_tool.value)
         self.update()
 
     def _update(self,img):
+        if getattr(self, "_glFailed", False):
+            return
         self.VBOdata = colorStudioUtils.img2chromaVertices(img, False)
         self.update()
 # ----------------------------------------------------------------------------------
 class CSQIMGButton(QPushButton):
 
-	def __init__(self,qicon,size,name="noname"):
-		# qicon 	(QIcon)
-		# size 		((x,y))
-		# name 		(String)
-		super().__init__()
-		self.setIcon(qicon)
-		self.name = name
-		x,y = size
-		self.setIconSize(QtCore.QSize(x,y))
-		self.clicked.connect(self.cbClicked)
-		
-	def cbClicked(self): pass
+    def __init__(self, qicon, size, name="noname"):
+        # qicon (QIcon)
+        # size ((x,y))
+        # name (String)
+        super().__init__()
+        self.setIcon(qicon)
+        self.name = name
+        x, y = size
+        self.setIconSize(QtCore.QSize(x, y))
+        self.clicked.connect(self.cbClicked)
+
+    def cbClicked(self): pass
 # ----------------------------------------------------------------------------------
 class CSQIMGSwitchButton(QPushButton):
 
-	def __init__(self,qiconOn,qiconOff,size,name="noname"):
-		# qicon 	(QIcon)
-		# size 		((x,y))
-		# name 		(String)
-		super().__init__()
-		self.iconOn = qiconOn
-		self.iconOff = qiconOff
-		# default state : on (true)
-		self.on = True
-		self.setIcon(self.iconOn)
-		self.name = name
-		x,y = size
-		self.setIconSize(QtCore.QSize(x,y))
-		self.clicked.connect(self.cbClicked)
-		
-	def cbClicked(self):
-		self.on = not(self.on)
-		if self.on:
-			self.setIcon(self.iconOn)
-		else:
-			self.setIcon(self.iconOff)
+    def __init__(self, qiconOn, qiconOff, size, name="noname"):
+        # qicon (QIcon)
+        # size ((x,y))
+        # name (String)
+        super().__init__()
+        self.iconOn = qiconOn
+        self.iconOff = qiconOff
+        # default state : on (true)
+        self.on = True
+        self.setIcon(self.iconOn)
+        self.name = name
+        x, y = size
+        self.setIconSize(QtCore.QSize(x, y))
+        self.clicked.connect(self.cbClicked)
+
+    def cbClicked(self):
+        self.on = not(self.on)
+        if self.on:
+            self.setIcon(self.iconOn)
+        else:
+            self.setIcon(self.iconOff)
 
 # ----------------------------------------------------------------------------------
 class CSQLoadSaveLayout(QHBoxLayout):
 
-	def __init__(self,qiconLoad,qiconSave):
-		super().__init__()
-		
-		# create load and save button
-		self.loadButton = CSQIMGButton(qiconLoad,(50,50),name="load button")
-		self.saveButton = CSQIMGButton(qiconSave,(50,50),name="save button")
-	
-		# add button to layout
-		self.addWidget(self.loadButton)
-		self.addWidget(self.saveButton)
+    def __init__(self, qiconLoad, qiconSave):
+        super().__init__()
+
+        # create load and save button
+        self.loadButton = CSQIMGButton(qiconLoad, (50, 50), name="load button")
+        self.saveButton = CSQIMGButton(qiconSave, (50, 50), name="save button")
+
+        # add button to layout
+        self.addWidget(self.loadButton)
+        self.addWidget(self.saveButton)
 # ----------------------------------------------------------------------------------
 class CSQLightControlLayout(QHBoxLayout):
 
@@ -274,7 +296,7 @@ class CSQLightControlLayout(QHBoxLayout):
         self._ieButton = CSQIMGButton(uiIEIMG,(50,50),name="increase exposure button")
         self._ccButton = CSQIMGButton(uiCCIMG,(50,50),name="light color  button")
         self._exposureValueLabel = QLabel("+0.00")
-        self._sliderPosition = QSlider(QtCore.Qt.Horizontal)
+        self._sliderPosition = QSlider(Qt.Orientation.Horizontal)
         self._sliderPosition.setValue(lightPosIdx)
         # control of Exposure
         self._step 	= stepE
@@ -377,7 +399,7 @@ class CSQAEControlLayout(QHBoxLayout):
             # send event to controller
             self._controller._event(self,[1,exposure])
         else:
-			# autoExposure off
+            # autoExposure off
             self._exposureOFF = self._exposureOFF + self._step
             if self._exposureOFF > self._max: self._exposureOFF = self._max
             exposure = self._exposureOFF
@@ -397,7 +419,7 @@ class CSQAEControlLayout(QHBoxLayout):
             # send event to controller
             self._controller._event(self,[-1,exposure])
         else:
-			# autoExposure off
+            # autoExposure off
             self._exposureOFF = self._exposureOFF - self._step
             if self._exposureOFF < - self._max: self._exposureOFF = - self._max
             exposure = self._exposureOFF
@@ -419,7 +441,7 @@ class CSDisplayWidget(QWidget):
         img = (np.ones((h,w,3))*255).astype(np.uint8)
         height, width, channel = img.shape
         bytesPerLine = channel * width
-        qImg = QImage(img, width, height, bytesPerLine, QImage.Format_RGB888)
+        qImg = QImage(img, width, height, bytesPerLine, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qImg)
         self._label.setPixmap(pixmap)
 
@@ -427,7 +449,7 @@ class CSDisplayWidget(QWidget):
         img = (imgDouble*255).astype(np.uint8)
         height, width, channel = img.shape
         bytesPerLine = channel * width
-        qImg = QImage(img, width, height, bytesPerLine, QImage.Format_RGB888)
+        qImg = QImage(img, width, height, bytesPerLine, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qImg)
         self._label.setPixmap(pixmap)
 # ----------------------------------------------------------------------------------		
@@ -449,7 +471,7 @@ class CSDisplayColorWheel(QWidget):
         colorWheelImg = (colorStudioUtils.colorWheel(self._width//2)*255).astype(np.uint8)
         height, width, channel = colorWheelImg.shape
         bytesPerLine = channel * width
-        qImg = QImage(colorWheelImg, width, height, bytesPerLine, QImage.Format_RGB888)
+        qImg = QImage(colorWheelImg, width, height, bytesPerLine, QImage.Format.Format_RGB888)
 
         # store pixmap in object
         self._pixmap = QPixmap.fromImage(qImg)
@@ -459,13 +481,19 @@ class CSDisplayColorWheel(QWidget):
         self._label.setPixmap(self._pixmap)
 
         # mouse
-        self.setMouseTracking(True)  
+        # ensure the widget has the expected fixed size
+        self.setFixedSize(self._width, self._height)
+        # make the label cover the widget and not accept mouse events
+        self._label.setGeometry(0, 0, self._width, self._height)
+        self._label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setMouseTracking(True)
 
     def mousePressEvent(self,e): self.mouseMoveEvent(e)
 
     def mouseMoveEvent(self, e):
         # mouse position
-        x,y = e.x(), e.y()
+        pos = e.position()
+        x, y = pos.x(), pos.y()
 
         # hsv color
         hsv_array = np.zeros([1,1,3])
@@ -517,11 +545,11 @@ class CSQSaturationLayout(QVBoxLayout):
 
         # create 
         self._linearSaturationValueLabel = QLabel("linear saturation: "+"{:+.0f}".format(self._linearSaturation))
-        self._sliderLinearSaturation = QSlider(QtCore.Qt.Horizontal)
+        self._sliderLinearSaturation = QSlider(Qt.Orientation.Horizontal)
         self._sliderLinearSaturation.setValue(50)
 
         self._gammaSaturationValueLabel = QLabel("gamma saturation: "+"{:+.0f}".format(self._gammaSaturation))
-        self._sliderGammaSaturation = QSlider(QtCore.Qt.Horizontal)
+        self._sliderGammaSaturation = QSlider(Qt.Orientation.Horizontal)
         self._sliderGammaSaturation.setValue(50)
 
         # add  to layout
