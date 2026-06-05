@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Color Studio - Rémi Cozot 2019
+Color Studio - 2019
 ----------------------------------
-new version of 
-Color Studio - Rémi Cozot 2019
+Utilities for Color Studio
 """
 # ----------------------------------------------------------------------------------
 # import(s)

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Color Studio - Rémi Cozot 2019
+Color Studio - 2019
 ----------------------------------
-new version of 
-Color Studio - Rémi Cozot 2019
+new version of
+Color Studio
 """
 # ----------------------------------------------------------------------------------
 # main changes
@@ -25,7 +25,8 @@ import moderngl
 import numpy as np
 import skimage
 
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QSlider, QMainWindow
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QSlider, QMainWindow, QScrollArea, QGroupBox
+from PyQt6.QtWidgets import QSizePolicy
 from PyQt6.QtGui import QIcon, QPixmap, QImage
 from PyQt6 import QtCore, QtOpenGL 
 
@@ -111,7 +112,7 @@ class CSUIAllBuilder(CSUIBuilder):
 
         # --- CRÉATION DE LA FENÊTRE PRINCIPALE UNIQUE ---
         self.mainWindow = QMainWindow()
-        self.mainWindow.setWindowTitle("Color Studio - Rémi Cozot")
+        self.mainWindow.setWindowTitle("Color Studio")
         
         # Le widget central requis par QMainWindow pour accueillir le layout global
         centralWidget = QWidget()
@@ -119,6 +120,8 @@ class CSUIAllBuilder(CSUIBuilder):
         
         # Disposition horizontale globale : [ Contrôles ] [ Vue Rendu ] [ Couleurs (3D + Roue) ]
         mainLayout = QHBoxLayout(centralWidget)
+        mainLayout.setSpacing(12)
+        mainLayout.setContentsMargins(8, 8, 8, 8)
 
         # (1) render Widget
         self._renderWidget = colorStudioWidget.CSDisplayWidget(None, "Render View")
@@ -132,17 +135,23 @@ class CSUIAllBuilder(CSUIBuilder):
         colorWheelController = colorStudioController.CSColorWheelController(lightsScene, None, [self._renderWidget, self._color3DWidget], self._colorWheelWidget)
         self._colorWheelWidget._controller = colorWheelController
 
-        # (4) control Widget
+        # (4) control Widget (scrollable)
         self._controlWidget = colorStudioWidget.CSDisplayControls()
+        self._controlWidget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        controlScroll = QScrollArea()
+        controlScroll.setWidgetResizable(True)
+        controlScroll.setWidget(self._controlWidget)
+        controlScroll.setFixedWidth(360)
 
-        # (5) load/save layout to control widget
+        # (5) load/save layout to control widget (grouped)
         loadSaveLayout = colorStudioWidget.CSQLoadSaveLayout(CSUIBuilder.uiLoadIMG, CSUIBuilder.uiSaveIMG)
-        self._controlWidget._layout.addWidget(QLabel("Load / Save"))
-        self._controlWidget._layout.addLayout(loadSaveLayout)
+        box_load = QGroupBox("Load / Save")
+        box_load.setLayout(QVBoxLayout())
+        box_load.layout().addLayout(loadSaveLayout)
+        self._controlWidget._layout.addWidget(box_load)
 
         # (6) light Control Layout per light
         for light in lightsScene._lights:
-            self._controlWidget._layout.addWidget(QLabel("Light: "+light._name+" - control [ - | EV | + ] [light color] [light position]"))
             # set value according to light
             lightControl_layout = colorStudioWidget.CSQLightControlLayout(None, lightPosIdx=light._imageIdx)
             expoString = "{:+.2f}".format(light._exposure)
@@ -157,16 +166,21 @@ class CSUIAllBuilder(CSUIBuilder):
         # hacking waiting to Post process in XML
         ae = colorStudioModel.AE_Ymean(Ytarget=0.5, exposure=0.0)
         lightsScene.addPostProcess(ae)
-        self._controlWidget._layout.addWidget(QLabel("Automatic Exposure"))
         AE_layout = colorStudioWidget.CSQAEControlLayout(None)
-        self._controlWidget._layout.addLayout(AE_layout)
+        box_ae = QGroupBox("Automatic Exposure")
+        box_ae.setLayout(QVBoxLayout())
+        box_ae.layout().addLayout(AE_layout)
+        self._controlWidget._layout.addWidget(box_ae)
         ae_controller = colorStudioController.CSAEController(lightsScene, ae, [self._renderWidget, self._color3DWidget])
         AE_layout._controller = ae_controller
 
         sat = colorStudioModel.Saturation()
         lightsScene.addPostProcess(sat)
         sat_layout = colorStudioWidget.CSQSaturationLayout(None)
-        self._controlWidget._layout.addLayout(sat_layout)
+        box_sat = QGroupBox("Saturation")
+        box_sat.setLayout(QVBoxLayout())
+        box_sat.layout().addLayout(sat_layout)
+        self._controlWidget._layout.addWidget(box_sat)
         sat_controller = colorStudioController.CSSaturationController(lightsScene, sat, [self._renderWidget, self._color3DWidget])
         sat_layout._controller = sat_controller
         # end of hack
@@ -175,12 +189,13 @@ class CSUIAllBuilder(CSUIBuilder):
         
         # Colonne de droite verticale pour empiler le rendu 3D et la Roue Chromatique
         rightColumnLayout = QVBoxLayout()
+        rightColumnLayout.setSpacing(8)
         rightColumnLayout.addWidget(self._color3DWidget)
         rightColumnLayout.addWidget(self._colorWheelWidget)
         
         # Ajout séquentiel des panneaux de gauche à droite avec des facteurs de proportion (stretch)
-        mainLayout.addWidget(self._controlWidget, stretch=1)    # Panneau de commandes
-        mainLayout.addWidget(self._renderWidget, stretch=2)     # Rendu principal (prend plus de place)
+        mainLayout.addWidget(controlScroll, stretch=1)    # Panneau de commandes (scrollable)
+        mainLayout.addWidget(self._renderWidget, stretch=3)     # Rendu principal (prend plus de place)
         mainLayout.addLayout(rightColumnLayout, stretch=1)      # Outils d'analyse de couleur
 
         # Affichage de l'interface globale

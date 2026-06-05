@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Color Studio - Rémi Cozot 2019
+Color Studio - 2019
 ----------------------------------
-new version of 
-Color Studio - Rémi Cozot 2019
+Widget components for Color Studio
 """
 # ----------------------------------------------------------------------------------
 # main changes
@@ -26,7 +25,7 @@ import math
 import numpy as np
 import skimage
 
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QSlider
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QToolButton, QVBoxLayout, QHBoxLayout, QSlider
 from PyQt6.QtGui import QIcon, QPixmap, QImage
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 from PyQt6.QtCore import Qt
@@ -217,24 +216,30 @@ class MyWidgetGL(QModernGLWidget):
         self.VBOdata = colorStudioUtils.img2chromaVertices(img, False)
         self.update()
 # ----------------------------------------------------------------------------------
-class CSQIMGButton(QPushButton):
+class CSQIMGButton(QToolButton):
 
-    def __init__(self, qicon, size, name="noname"):
+    def __init__(self, qicon, size, name="noname", text=None):
         # qicon (QIcon)
         # size ((x,y))
         # name (String)
         super().__init__()
         self.setIcon(qicon)
         self.name = name
+        label = text if text is not None else name
+        self.setText(label)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         x, y = size
-        self.setIconSize(QtCore.QSize(x, y))
+        # set a consistent icon and button size for alignment
+        icon_size = QtCore.QSize(x, y)
+        self.setIconSize(icon_size)
+        self.setFixedSize(icon_size.width() + 24, icon_size.height() + 30)
         self.clicked.connect(self.cbClicked)
 
     def cbClicked(self): pass
 # ----------------------------------------------------------------------------------
-class CSQIMGSwitchButton(QPushButton):
+class CSQIMGSwitchButton(QToolButton):
 
-    def __init__(self, qiconOn, qiconOff, size, name="noname"):
+    def __init__(self, qiconOn, qiconOff, size, name="noname", textOn="On", textOff="Off"):
         # qicon (QIcon)
         # size ((x,y))
         # name (String)
@@ -245,6 +250,10 @@ class CSQIMGSwitchButton(QPushButton):
         self.on = True
         self.setIcon(self.iconOn)
         self.name = name
+        self.textOn = textOn
+        self.textOff = textOff
+        self.setText(self.textOn)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         x, y = size
         self.setIconSize(QtCore.QSize(x, y))
         self.clicked.connect(self.cbClicked)
@@ -253,18 +262,21 @@ class CSQIMGSwitchButton(QPushButton):
         self.on = not(self.on)
         if self.on:
             self.setIcon(self.iconOn)
+            self.setText(self.textOn)
         else:
             self.setIcon(self.iconOff)
+            self.setText(self.textOff)
 
 # ----------------------------------------------------------------------------------
 class CSQLoadSaveLayout(QHBoxLayout):
 
     def __init__(self, qiconLoad, qiconSave):
         super().__init__()
+        self.setSpacing(8)
 
         # create load and save button
-        self.loadButton = CSQIMGButton(qiconLoad, (50, 50), name="load button")
-        self.saveButton = CSQIMGButton(qiconSave, (50, 50), name="save button")
+        self.loadButton = CSQIMGButton(qiconLoad, (50, 50), name="load button", text="Load")
+        self.saveButton = CSQIMGButton(qiconSave, (50, 50), name="save button", text="Save")
 
         # add button to layout
         self.addWidget(self.loadButton)
@@ -293,9 +305,9 @@ class CSQLightControlLayout(QHBoxLayout):
         if uiCCIMG == None : uiCCIMG = colorStudioUIBuilder.CSUIBuilder.uiCCIMG
 
         # create button
-        self._deButton = CSQIMGButton(uiDEIMG,(50,50),name="decrease exposure button")
-        self._ieButton = CSQIMGButton(uiIEIMG,(50,50),name="increase exposure button")
-        self._ccButton = CSQIMGButton(uiCCIMG,(50,50),name="light color  button")
+        self._deButton = CSQIMGButton(uiDEIMG,(50,50),name="decrease exposure button", text="EV -")
+        self._ieButton = CSQIMGButton(uiIEIMG,(50,50),name="increase exposure button", text="EV +")
+        self._ccButton = CSQIMGButton(uiCCIMG,(50,50),name="light color  button", text="Color")
         self._exposureValueLabel = QLabel("+0.00")
         self._sliderPosition = QSlider(Qt.Orientation.Horizontal)
         self._sliderPosition.setValue(lightPosIdx)
@@ -303,12 +315,13 @@ class CSQLightControlLayout(QHBoxLayout):
         self._step 	= stepE
         self._max 	= maxE
         self._exposure = 0.0
-        # add button to layout
+        # add button to layout (consistent spacing and alignment)
+        self.setSpacing(8)
         self.addWidget(self._deButton)
         self.addWidget(self._exposureValueLabel)
         self.addWidget(self._ieButton)
         self.addWidget(self._ccButton)
-        self.addWidget(self._sliderPosition)
+        self.addWidget(self._sliderPosition, stretch=1)
 
         # set onClick callback
         self._ieButton.clicked.connect(self.incExposure)
@@ -358,7 +371,7 @@ class CSQAEControlLayout(QHBoxLayout):
         if uiAEoffIMG == None : uiAEoffIMG = colorStudioUIBuilder.CSUIBuilder.uiAEoffIMG
 
         # create automatic exposure (switch) + control button
-        self._aeButton =  CSQIMGSwitchButton(uiAEonIMG,uiAEoffIMG,(50,50),name="switch AE")
+        self._aeButton =  CSQIMGSwitchButton(uiAEonIMG,uiAEoffIMG,(50,50),name="switch AE", textOn="AE On", textOff="AE Off")
 
         self._ieButton = QPushButton("EV (+)")
         self._deButton = QPushButton("EV (-)")
@@ -525,6 +538,11 @@ class CSDisplayControls(QWidget):
         # add Vertical layout
         self._layout = QVBoxLayout()
         self.setLayout(self._layout)
+        # ensure a solid background so the control panel is not visually transparent
+        self.setAutoFillBackground(True)
+        self.setStyleSheet("background-color: #f7f7f7;")
+        self._layout.setContentsMargins(8, 8, 8, 8)
+        self._layout.setSpacing(10)
 # ----------------------------------------------------------------------------------		
 class CSQSaturationLayout(QVBoxLayout):
 

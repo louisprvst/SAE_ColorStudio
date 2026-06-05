@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Color Studio - Rémi Cozot 2019
+Color Studio - 2019
 ----------------------------------
 new version of 
-Color Studio - Rémi Cozot 2019
+Color Studio
 """
 # ----------------------------------------------------------------------------------
 # main changes
@@ -28,8 +28,8 @@ import colorStudioUtils
 import colorStudioUIBuilder
 
 # ----------------------------------------------------------------------------------		
-print("ColorStudio - Rémi Cozot - 2019")
-print("-------------------------------")
+print("ColorStudio - 2019")
+print("-------------------")
 screenX, screenY = colorStudioWidget.getScreenSize()
 print("screen resolution: ",screenX,"x",screenY)
 colorStudioUIBuilder.CSUIAllBuilder.setTemplate(screenX,screenY)
