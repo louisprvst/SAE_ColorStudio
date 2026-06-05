@@ -69,13 +69,14 @@ class QModernGLWidget(QOpenGLWidget):
 
         if not self._glReady:
             try:
-                self.ctx = moderngl.create_context()
+                # CORRECTION : On force modernGL à utiliser le contexte OpenGL déjà créé par PyQt6
+                self.ctx = moderngl.create_context(require=330)
                 self.screen = self.ctx.detect_framebuffer()
                 self.init()
                 self._glReady = True
-            except OSError as exc:
+            except (OSError, ValueError) as exc:  # CORRECTION : On capture aussi ValueError pour éviter le crash
                 self._glFailed = True
-                print("ColorStudio: OpenGL indisponible, rendu 3D désactivé:", exc)
+                print("ColorStudio: OpenGL indisponible (Rendu 3D désactivé) :", exc)
                 return
 
         self.render()
