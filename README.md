@@ -63,23 +63,4 @@ Pour exécuter la suite de tests unitaires :
 python3 -m unittest discover -s tests -p "test_*.py"
 ```
 
-Il existe aussi un fichier de tests à la racine `test_colorStudioModel.py` (legacy).
-
-Nettoyage
----------
-- Pour supprimer les caches Python :
-
-```bash
-rm -rf __pycache__ tests/__pycache__
-```
-
-Contribuer
-----------
-- Mets à jour le code, exécute les tests, et soumets des modifications via Git.
-
-Contact et crédits
-------------------
-Auteur original : projet pédagogique.
-
----
-Fichier court d'aide utilisateur et guide de démarrage.
+Il existe aussi un fichier de tests à la racine `test_colorStudioModel.py`.

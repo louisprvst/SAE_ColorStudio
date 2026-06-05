@@ -230,9 +230,10 @@ class CSQIMGButton(QToolButton):
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         x, y = size
         # set a consistent icon and button size for alignment
-        icon_size = QtCore.QSize(x, y)
+        icon_size = QtCore.QSize(max(x, 50), max(y, 50))  # min 50x50
         self.setIconSize(icon_size)
         self.setFixedSize(icon_size.width() + 24, icon_size.height() + 30)
+        self.setStyleSheet("QToolButton { background-color: #e8e8e8; border: 1px solid #999; border-radius: 4px; color: #000; }")
         self.clicked.connect(self.cbClicked)
 
     def cbClicked(self): pass
@@ -255,7 +256,10 @@ class CSQIMGSwitchButton(QToolButton):
         self.setText(self.textOn)
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         x, y = size
-        self.setIconSize(QtCore.QSize(x, y))
+        icon_size = QtCore.QSize(max(x, 50), max(y, 50))  # min 50x50
+        self.setIconSize(icon_size)
+        self.setFixedSize(icon_size.width() + 24, icon_size.height() + 30)
+        self.setStyleSheet("QToolButton { background-color: #e8e8e8; border: 1px solid #999; border-radius: 4px; color: #000; }")
         self.clicked.connect(self.cbClicked)
 
     def cbClicked(self):
@@ -375,6 +379,10 @@ class CSQAEControlLayout(QHBoxLayout):
 
         self._ieButton = QPushButton("EV (+)")
         self._deButton = QPushButton("EV (-)")
+        # apply consistent styling
+        button_style = "QPushButton { background-color: #e8e8e8; border: 1px solid #999; border-radius: 4px; padding: 4px; color: #000; }"
+        self._ieButton.setStyleSheet(button_style)
+        self._deButton.setStyleSheet(button_style)
 
         # exposure value label
         self._exposureValueLabel = QLabel("+0.00")
@@ -540,7 +548,6 @@ class CSDisplayControls(QWidget):
         self.setLayout(self._layout)
         # ensure a solid background so the control panel is not visually transparent
         self.setAutoFillBackground(True)
-        self.setStyleSheet("background-color: #f7f7f7;")
         self._layout.setContentsMargins(8, 8, 8, 8)
         self._layout.setSpacing(10)
 # ----------------------------------------------------------------------------------		
